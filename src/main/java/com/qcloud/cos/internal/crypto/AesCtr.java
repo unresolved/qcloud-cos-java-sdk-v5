@@ -19,12 +19,17 @@
 package com.qcloud.cos.internal.crypto;
 
 class AesCtr extends ContentCryptoScheme {
+
+    private byte[] iv = null;
+
     @Override String getKeyGeneratorAlgorithm() { return AES_GCM.getKeyGeneratorAlgorithm(); }
     @Override String getCipherAlgorithm() { return "AES/CTR/NoPadding"; }
     @Override int getKeyLengthInBits() { return AES_GCM.getKeyLengthInBits(); }
     @Override int getBlockSizeInBytes() { return AES_GCM.getBlockSizeInBytes(); }
     @Override int getIVLengthInBytes() { return 16; }
     @Override long getMaxPlaintextSize() {  return MAX_CTR_BYTES;  }
+    @Override byte[] getIV() { return this.iv; }
+    @Override void setIV(byte[] iv) { this.iv = iv; }
 
     @Override
     byte[] adjustIV(byte[] iv, long byteOffset) {
@@ -44,11 +49,12 @@ class AesCtr extends ContentCryptoScheme {
         return incrementBlocks(J0, blockOffset);
     }
 
-     private byte[] computeJ0(byte[] nonce) {
-         final int blockSize = getBlockSizeInBytes();
-         byte[] J0 = new byte[blockSize];
-         System.arraycopy(nonce, 0, J0, 0, nonce.length);
-         J0[blockSize - 1] = 0x01;
-         return incrementBlocks(J0, 1);
-     }
+    private byte[] computeJ0(byte[] nonce) {
+        final int blockSize = getBlockSizeInBytes();
+        byte[] J0 = new byte[blockSize];
+        System.arraycopy(nonce, 0, J0, 0, nonce.length);
+        J0[blockSize - 1] = 0x01;
+        return incrementBlocks(J0, 1);
+    }
+
 }

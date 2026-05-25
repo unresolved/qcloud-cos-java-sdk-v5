@@ -2,66 +2,135 @@ package com.qcloud.cos.model.ciModel.job;
 
 import com.qcloud.cos.internal.CIServiceRequest;
 import com.qcloud.cos.model.ciModel.common.MediaInputObject;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
 import java.io.Serializable;
 
 /**
  * 媒体处理 任务请求实体 https://cloud.tencent.com/document/product/460/48234
  */
+@XStreamAlias("Request")
 public class MediaJobsRequest extends CIServiceRequest implements Serializable {
     /**
      * bucket名称
      */
+    @XStreamOmitField
     private String bucketName;
     /**
      * 任务的队列id
      */
+    @XStreamOmitField
     private String queueId;
     /**
      * 任务类型
      */
+    @XStreamAlias("Tag")
     private String tag;
     /**
      * 时间顺序
      */
+    @XStreamAlias("OrderByTime")
     private String orderByTime;
+
     /**
      * 下一个token
      */
+    @XStreamAlias("NextToken")
     private String nextToken;
+
     /**
-     * 查询数量 默认为十个
+     * 查询数量，默认为十个
      */
+    @XStreamAlias("Size")
     private Integer size = 10;
+
     /**
      * 任务状态
      */
+    @XStreamAlias("States")
     private String states;
+
     /**
      * 开始时间
      */
+    @XStreamAlias("StartCreationTime")
     private String startCreationTime;
+
     /**
      * 结束时间
      */
+    @XStreamAlias("EndCreationTime")
     private String endCreationTime;
+
     /**
      * 任务id
      */
+    @XStreamAlias("JobId")
     private String jobId;
+
     /**
      * 输入对象
      */
+    @XStreamAlias("Input")
     private MediaInputObject input;
     /**
      * 媒体操作对象
      */
+    @XStreamAlias("Operation")
     private MediaJobOperation operation;
     /**
      * 回调参数
      */
+    @XStreamAlias("CallBack")
     private String callBack;
 
+    /**
+     * 回调类型  json / xml  默认为xml
+     */
+    @XStreamAlias("CallBackFormat")
+    private String callBackFormat;
+
+    /**
+     * 任务回调类型，Url 或 TDMQ 或 Kafka，默认 Url，优先级高于队列的回调类型
+     */
+    @XStreamAlias("CallBackType")
+    private String callBackType;
+    @XStreamAlias("CallBackMqConfig")
+    private CallBackMqConfig callBackMqConfig;
+
+    @XStreamAlias("CallBackKafkaConfig")
+    private CallBackKafkaConfig callBackKafkaConfig;
+
+    @XStreamAlias("QueueType")
+    private String queueType;
+
+    public String getQueueType() {
+        return queueType;
+    }
+
+    public void setQueueType(String queueType) {
+        this.queueType = queueType;
+    }
+
+    public String getCallBackType() {
+        return callBackType;
+    }
+
+    public void setCallBackType(String callBackType) {
+        this.callBackType = callBackType;
+    }
+
+    public CallBackMqConfig getCallBackMqConfig() {
+        if (callBackMqConfig == null) {
+            callBackMqConfig = new CallBackMqConfig();
+        }
+        return callBackMqConfig;
+    }
+
+    public void setCallBackMqConfig(CallBackMqConfig callBackMqConfig) {
+        this.callBackMqConfig = callBackMqConfig;
+    }
 
     public String getBucketName() {
         return bucketName;
@@ -173,23 +242,28 @@ public class MediaJobsRequest extends CIServiceRequest implements Serializable {
         this.callBack = callBack;
     }
 
+    public String getCallBackFormat() {
+        return callBackFormat;
+    }
+
+    public void setCallBackFormat(String callBackFormat) {
+        this.callBackFormat = callBackFormat;
+    }
+
+
+    public CallBackKafkaConfig getCallBackKafkaConfig() {
+        if (callBackKafkaConfig == null) {
+            callBackKafkaConfig = new CallBackKafkaConfig();
+        }
+        return callBackKafkaConfig;
+    }
+
+    public void setCallBackKafkaConfig(CallBackKafkaConfig callBackKafkaConfig) {
+        this.callBackKafkaConfig = callBackKafkaConfig;
+    }
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("MediaJobsRequest{");
-        sb.append("bucketName='").append(bucketName).append('\'');
-        sb.append(", queueId='").append(queueId).append('\'');
-        sb.append(", tag='").append(tag).append('\'');
-        sb.append(", orderByTime='").append(orderByTime).append('\'');
-        sb.append(", nextToken='").append(nextToken).append('\'');
-        sb.append(", size=").append(size);
-        sb.append(", states='").append(states).append('\'');
-        sb.append(", startCreationTime='").append(startCreationTime).append('\'');
-        sb.append(", endCreationTime='").append(endCreationTime).append('\'');
-        sb.append(", jobId='").append(jobId).append('\'');
-        sb.append(", input=").append(input);
-        sb.append(", operation=").append(operation);
-        sb.append(", callBack='").append(callBack).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "MediaJobsRequest{" + "bucketName='" + bucketName + '\'' + ", queueId='" + queueId + '\'' + ", tag='" + tag + '\'' + ", orderByTime='" + orderByTime + '\'' + ", nextToken='" + nextToken + '\'' + ", size=" + size + ", states='" + states + '\'' + ", startCreationTime='" + startCreationTime + '\'' + ", endCreationTime='" + endCreationTime + '\'' + ", jobId='" + jobId + '\'' + ", input=" + input + ", operation=" + operation + ", callBack='" + callBack + '\'' + ", callBackFormat='" + callBackFormat + '\'' + "callBackKafkaConfig={" + callBackKafkaConfig + "}}";
     }
 }

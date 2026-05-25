@@ -27,41 +27,37 @@ import java.util.Map;
 
 import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.model.CASJobParameters;
-import com.qcloud.cos.model.PartETag;
-import com.qcloud.cos.model.RestoreObjectRequest;
-import com.qcloud.cos.model.SelectObjectContentRequest;
-import com.qcloud.cos.model.RequestProgress;
-import com.qcloud.cos.model.SelectParameters;
 import com.qcloud.cos.model.CSVInput;
-import com.qcloud.cos.model.JSONInput;
 import com.qcloud.cos.model.CSVOutput;
-import com.qcloud.cos.model.JSONOutput;
 import com.qcloud.cos.model.InputSerialization;
+import com.qcloud.cos.model.JSONInput;
+import com.qcloud.cos.model.JSONOutput;
 import com.qcloud.cos.model.OutputSerialization;
+import com.qcloud.cos.model.PartETag;
+import com.qcloud.cos.model.RequestProgress;
+import com.qcloud.cos.model.RestoreObjectRequest;
 import com.qcloud.cos.model.ScanRange;
+import com.qcloud.cos.model.SelectObjectContentRequest;
 import com.qcloud.cos.model.ciModel.auditing.AudioAuditingRequest;
+import com.qcloud.cos.model.ciModel.auditing.BatchImageAuditingInputObject;
+import com.qcloud.cos.model.ciModel.auditing.BatchImageAuditingRequest;
 import com.qcloud.cos.model.ciModel.auditing.Conf;
+import com.qcloud.cos.model.ciModel.auditing.DocumentAuditingRequest;
+import com.qcloud.cos.model.ciModel.auditing.TextAuditingRequest;
+import com.qcloud.cos.model.ciModel.auditing.UserInfo;
 import com.qcloud.cos.model.ciModel.auditing.VideoAuditingRequest;
+import com.qcloud.cos.model.ciModel.auditing.WebpageAuditingRequest;
 import com.qcloud.cos.model.ciModel.common.MediaOutputObject;
-import com.qcloud.cos.model.ciModel.job.DocJobObject;
-import com.qcloud.cos.model.ciModel.job.DocJobRequest;
-import com.qcloud.cos.model.ciModel.job.DocProcessObject;
-import com.qcloud.cos.model.ciModel.job.MediaAudioObject;
-import com.qcloud.cos.model.ciModel.job.MediaConcatFragmentObject;
-import com.qcloud.cos.model.ciModel.job.MediaConcatTemplateObject;
-import com.qcloud.cos.model.ciModel.job.MediaJobOperation;
-import com.qcloud.cos.model.ciModel.job.MediaJobsRequest;
-import com.qcloud.cos.model.ciModel.job.MediaRemoveWaterMark;
-import com.qcloud.cos.model.ciModel.job.MediaVideoObject;
+import com.qcloud.cos.model.ciModel.job.*;
 import com.qcloud.cos.model.ciModel.mediaInfo.MediaInfoRequest;
 import com.qcloud.cos.model.ciModel.queue.DocQueueRequest;
 import com.qcloud.cos.model.ciModel.queue.MediaQueueRequest;
 import com.qcloud.cos.model.ciModel.snapshot.SnapshotRequest;
-import com.qcloud.cos.model.ciModel.template.MediaTemplateRequest;
 import com.qcloud.cos.model.ciModel.template.MediaSnapshotObject;
-import com.qcloud.cos.model.ciModel.template.MediaWatermark;
-import com.qcloud.cos.model.ciModel.template.MediaWaterMarkText;
+import com.qcloud.cos.model.ciModel.template.MediaTemplateRequest;
 import com.qcloud.cos.model.ciModel.template.MediaWaterMarkImage;
+import com.qcloud.cos.model.ciModel.template.MediaWaterMarkText;
+import com.qcloud.cos.model.ciModel.template.MediaWatermark;
 import com.qcloud.cos.model.ciModel.workflow.MediaOperation;
 import com.qcloud.cos.model.ciModel.workflow.MediaWorkflowDependency;
 import com.qcloud.cos.model.ciModel.workflow.MediaWorkflowNode;
@@ -138,22 +134,22 @@ public class RequestXmlFactory {
         xml.end();
     }
 
-    private static void addSelectParametersIfNotNull(XmlWriter xml, SelectParameters selectParameters) {
-        if (selectParameters == null) {
-            return;
-        }
-
-        xml.start("SelectParameters");
-
-        addInputSerializationIfNotNull(xml, selectParameters.getInputSerialization());
-
-        addIfNotNull(xml, "ExpressionType", selectParameters.getExpressionType());
-        addIfNotNull(xml, "Expression", selectParameters.getExpression());
-
-        addOutputSerializationIfNotNull(xml, selectParameters.getOutputSerialization());
-
-        xml.end();
-    }
+//    private static void addSelectParametersIfNotNull(XmlWriter xml, SelectParameters selectParameters) {
+//        if (selectParameters == null) {
+//            return;
+//        }
+//
+//        xml.start("SelectParameters");
+//
+//        addInputSerializationIfNotNull(xml, selectParameters.getInputSerialization());
+//
+//        addIfNotNull(xml, "ExpressionType", selectParameters.getExpressionType());
+//        addIfNotNull(xml, "Expression", selectParameters.getExpression());
+//
+//        addOutputSerializationIfNotNull(xml, selectParameters.getOutputSerialization());
+//
+//        xml.end();
+//    }
 
     private static void addScanRangeIfNotNull(XmlWriter xml, ScanRange scanRange) {
         if (scanRange != null) {
@@ -331,7 +327,7 @@ public class RequestXmlFactory {
 
         MediaJobOperation operation = request.getOperation();
         xml.start("Operation");
-        addIfNotNull(xml,"TemplateId",operation.getTemplateId());
+        addIfNotNull(xml, "TemplateId", operation.getTemplateId());
 
         List<String> watermarkTemplateId = operation.getWatermarkTemplateId();
         if (watermarkTemplateId.size() != 0) {
@@ -382,20 +378,20 @@ public class RequestXmlFactory {
         }
 
         MediaConcatTemplateObject mediaConcatTemplate = operation.getMediaConcatTemplate();
-        if (CheckObjectUtils.objIsNotValid(mediaConcatTemplate)){
+        if (CheckObjectUtils.objIsNotValid(mediaConcatTemplate)) {
             xml.start("ConcatTemplate");
             List<MediaConcatFragmentObject> concatFragmentList = mediaConcatTemplate.getConcatFragmentList();
             for (MediaConcatFragmentObject concatFragment : concatFragmentList) {
                 xml.start("ConcatFragment");
-                addIfNotNull(xml,"Mode",concatFragment.getMode());
-                addIfNotNull(xml,"Url",concatFragment.getUrl());
+                addIfNotNull(xml, "Mode", concatFragment.getMode());
+                addIfNotNull(xml, "Url", concatFragment.getUrl());
                 xml.end();
             }
-            addVideo(xml,mediaConcatTemplate.getVideo());
-            addAudio(xml,mediaConcatTemplate.getAudio());
-            addIfNotNull(xml,"Index",mediaConcatTemplate.getIndex());
+            addVideo(xml, mediaConcatTemplate.getVideo());
+            addAudio(xml, mediaConcatTemplate.getAudio());
+            addIfNotNull(xml, "Index", mediaConcatTemplate.getIndex());
             String format = mediaConcatTemplate.getContainer().getFormat();
-            if (!StringUtils.isNullOrEmpty(format)){
+            if (!StringUtils.isNullOrEmpty(format)) {
                 xml.start("Container");
                 xml.start("Format").value(format).end();
                 xml.end();
@@ -403,15 +399,77 @@ public class RequestXmlFactory {
             xml.end();
         }
 
-        xml.start("Output");
-        xml.start("Region").value(operation.getOutput().getRegion()).end();
-        xml.start("Object").value(operation.getOutput().getObject()).end();
-        xml.start("Bucket").value(operation.getOutput().getBucket()).end();
-        xml.end();
+        MediaTranscodeObject transcode = operation.getTranscode();
+        String format = transcode.getContainer().getFormat();
+        if (CheckObjectUtils.objIsNotValid(transcode) && !StringUtils.isNullOrEmpty(format)) {
+            xml.start("Transcode");
+            MediaTranscodeVideoObject video = transcode.getVideo();
+            MediaAudioObject audio = transcode.getAudio();
+            MediaTransConfigObject transConfig = transcode.getTransConfig();
+            MediaTimeIntervalObject timeInterval = transcode.getTimeInterval();
+            if (format != null) {
+                xml.start("Container");
+                xml.start("Format").value(format).end();
+                xml.end();
+            }
+            if (CheckObjectUtils.objIsNotValid(timeInterval)) {
+                xml.start("TimeInterval");
+                xml.start("Duration").value(timeInterval.getDuration()).end();
+                xml.start("Start").value(timeInterval.getStart()).end();
+                xml.end();
+            }
+            if (CheckObjectUtils.objIsNotValid(video)) {
+                addVideo(xml, video);
+
+            }
+            if (CheckObjectUtils.objIsNotValid(audio)) {
+                addAudio(xml, audio);
+            }
+
+            if (CheckObjectUtils.objIsNotValid(transConfig)) {
+                xml.start("TransConfig");
+                addIfNotNull(xml, "AdjDarMethod", transConfig.getAdjDarMethod());
+                addIfNotNull(xml, "AudioBitrateAdjMethod", transConfig.getAudioBitrateAdjMethod());
+                addIfNotNull(xml, "IsCheckAudioBitrate", transConfig.getIsCheckAudioBitrate());
+                addIfNotNull(xml, "IsCheckReso", transConfig.getIsCheckReso());
+                addIfNotNull(xml, "IsCheckVideoBitrate", transConfig.getIsCheckVideoBitrate());
+                addIfNotNull(xml, "ResoAdjMethod", transConfig.getResoAdjMethod());
+                addIfNotNull(xml, "TransMode", transConfig.getTransMode());
+                addIfNotNull(xml, "VideoBitrateAdjMethod", transConfig.getVideoBitrateAdjMethod());
+                xml.end();
+            }
+            xml.end();
+        }
+
+        MediaDigitalWatermark digitalWatermark = operation.getDigitalWatermark();
+        if (CheckObjectUtils.objIsNotValid(digitalWatermark)) {
+            xml.start("DigitalWatermark");
+            addIfNotNull(xml, "Message", digitalWatermark.getMessage());
+            addIfNotNull(xml, "Type", digitalWatermark.getType());
+            addIfNotNull(xml, "Version", digitalWatermark.getVersion());
+            xml.end();
+        }
+
+        ExtractDigitalWatermark extractDigitalWatermark = operation.getExtractDigitalWatermark();
+        if (extractDigitalWatermark.getType() != null || extractDigitalWatermark.getMessage() != null) {
+            xml.start("ExtractDigitalWatermark");
+            addIfNotNull(xml, "Message", extractDigitalWatermark.getMessage());
+            addIfNotNull(xml, "Type", extractDigitalWatermark.getType());
+            addIfNotNull(xml, "Version", extractDigitalWatermark.getVersion());
+            xml.end();
+        }
+        MediaOutputObject output = operation.getOutput();
+        if (CheckObjectUtils.objIsNotValid(output)) {
+            xml.start("Output");
+            addIfNotNull(xml, "Region", output.getRegion());
+            addIfNotNull(xml, "Object", output.getObject());
+            addIfNotNull(xml, "Bucket", output.getBucket());
+            xml.end();
+        }
 
         xml.end();
         xml.start("QueueId").value(request.getQueueId()).end();
-        addIfNotNull(xml,"CallBack",request.getCallBack());
+        addIfNotNull(xml, "CallBack", request.getCallBack());
         xml.end();
         return xml.getBytes();
     }
@@ -434,6 +492,7 @@ public class RequestXmlFactory {
         addIfNotNull(xml, "Type", request.getNotifyConfig().getType());
         addIfNotNull(xml, "Url", request.getNotifyConfig().getUrl());
         addIfNotNull(xml, "Event", request.getNotifyConfig().getEvent());
+        addIfNotNull(xml, "State", request.getNotifyConfig().getState());
         xml.end();
         xml.end();
         return xml.getBytes();
@@ -568,6 +627,9 @@ public class RequestXmlFactory {
     }
 
     private static void addAudio(XmlWriter xml, MediaAudioObject audio) {
+        if (CheckObjectUtils.objIsValid(audio)) {
+            return;
+        }
         xml.start("Audio");
         addIfNotNull(xml, "Bitrate", audio.getBitrate());
         addIfNotNull(xml, "Channels", audio.getChannels());
@@ -610,12 +672,15 @@ public class RequestXmlFactory {
         xml.start("Request");
         xml.start("Tag").value(docJobObject.getTag()).end();
         xml.start("QueueId").value(docJobObject.getQueueId()).end();
+
         xml.start("Input");
-        xml.start("Object").value(docJobObject.getInput().getObject()).end();
+        addIfNotNull(xml, "Object", docJobObject.getInput().getObject());
+        addIfNotNull(xml, "Url", docJobObject.getInput().getUrl());
         xml.end();
 
-        if (CheckObjectUtils.objIsNotValid(docJobObject)){
+        if (CheckObjectUtils.objIsNotValid(docJobObject)) {
             xml.start("Operation");
+            xml.start("UserData").value(docJobObject.getOperation().getUserData()).end();
             xml.start("Output");
             MediaOutputObject output = docJobObject.getOperation().getOutput();
             addIfNotNull(xml, "Region", output.getRegion());
@@ -623,29 +688,53 @@ public class RequestXmlFactory {
             addIfNotNull(xml, "Object", output.getObject());
             xml.end();
 
-            xml.start("DocProcess");
-            DocProcessObject docProcess = docJobObject.getOperation().getDocProcessObject();
-            addIfNotNull(xml, "SrcType", docProcess.getSrcType());
-            addIfNotNull(xml, "TgtType", docProcess.getTgtType());
-            addIfNotNull(xml, "SheetId", docProcess.getSheetId());
-            addIfNotNull(xml, "StartPage", docProcess.getStartPage());
-            addIfNotNull(xml, "EndPage", docProcess.getEndPage());
-            addIfNotNull(xml, "ImageParams", docProcess.getImageParams());
-            addIfNotNull(xml, "DocPassword", docProcess.getDocPassword());
-            addIfNotNull(xml, "Comments", docProcess.getComments());
-            addIfNotNull(xml, "PaperDirection", docProcess.getPaperDirection());
-            addIfNotNull(xml, "Quality", docProcess.getQuality());
-            addIfNotNull(xml, "Zoom", docProcess.getZoom());
+            addDocProcess(xml, docJobObject);
+            addWatermark(xml, docJobObject.getOperation().getDocWatermarkObject());
             xml.end();
 
-            xml.end();
         }
         xml.end();
         return xml.getBytes();
     }
 
+    private static void addDocProcess(XmlWriter xml, DocJobObject docJobObject) {
+        DocProcessObject docProcess = docJobObject.getOperation().getDocProcessObject();
+        if (CheckObjectUtils.objIsValid(docProcess)) {
+            return;
+        }
+        xml.start("DocProcess");
+        addIfNotNull(xml, "SrcType", docProcess.getSrcType());
+        addIfNotNull(xml, "TgtType", docProcess.getTgtType());
+        addIfNotNull(xml, "SheetId", docProcess.getSheetId());
+        addIfNotNull(xml, "StartPage", docProcess.getStartPage());
+        addIfNotNull(xml, "EndPage", docProcess.getEndPage());
+        addIfNotNull(xml, "ImageParams", docProcess.getImageParams());
+        addIfNotNull(xml, "DocPassword", docProcess.getDocPassword());
+        addIfNotNull(xml, "Comments", docProcess.getComments());
+        addIfNotNull(xml, "PaperDirection", docProcess.getPaperDirection());
+        addIfNotNull(xml, "Quality", docProcess.getQuality());
+        addIfNotNull(xml, "Zoom", docProcess.getZoom());
+        addIfNotNull(xml, "PicPagination", docProcess.getPicPagination());
+        addIfNotNull(xml, "ImageDpi", docProcess.getImageDpi());
+        addWatermark(xml, docProcess.getDocWatermark());
+        xml.end();
+    }
+
+    private static void addWatermark(XmlWriter xml, DocWatermark docWatermark) {
+        if (CheckObjectUtils.objIsValid(docWatermark)) {
+            return;
+        }
+        xml.start("DocWatermark");
+        addIfNotNull(xml, "Type", docWatermark.getType());
+        addIfNotNull(xml, "Image", docWatermark.getImage());
+        addIfNotNull(xml, "Dx", docWatermark.getDx());
+        addIfNotNull(xml, "Dy", docWatermark.getDy());
+        addIfNotNull(xml, "SrcType", docWatermark.getSrcType());
+        xml.end();
+    }
+
     /**
-     * Converts the MediaQueueRequest to an XML fragment that can be sent to the QueueObject of COS
+     * Converts the DocQueueRequest to an XML fragment that can be sent to the QueueObject of COS
      *
      * @param request The container which provides options for restoring an object
      * @return A byte array containing the data
@@ -680,17 +769,24 @@ public class RequestXmlFactory {
 
         xml.start("Request");
         xml.start("Input");
-        addIfNotNull(xml,"Object",request.getInput().getObject());
+        addIfNotNull(xml, "Object", request.getInput().getObject());
+        addIfNotNull(xml, "Url", request.getInput().getUrl());
+        addIfNotNull(xml, "DataId", request.getInput().getDataId());
+        addUserInfo(xml, request.getInput().getUserInfo());
         xml.end();
         Conf conf = request.getConf();
         xml.start("Conf");
-        addIfNotNull(xml,"DetectType", conf.getDetectType());
+        String detectType = conf.getDetectType();
+        addAuditingDetectType(xml, detectType);
+        addIfNotNull(xml, "BizType", conf.getBizType());
+        addIfNotNull(xml, "DetectContent", conf.getDetectContent());
+        addIfNotNull(xml, "CallbackVersion", conf.getCallbackVersion());
         xml.start("Snapshot");
-        addIfNotNull(xml,"Mode", conf.getSnapshot().getMode());
-        addIfNotNull(xml,"TimeInterval", conf.getSnapshot().getTimeInterval());
-        addIfNotNull(xml,"Count", conf.getSnapshot().getCount());
+        addIfNotNull(xml, "Mode", conf.getSnapshot().getMode());
+        addIfNotNull(xml, "TimeInterval", conf.getSnapshot().getTimeInterval());
+        addIfNotNull(xml, "Count", conf.getSnapshot().getCount());
         xml.end();
-        addIfNotNull(xml,"Callback", conf.getCallback());
+        addIfNotNull(xml, "Callback", conf.getCallback());
         xml.end();
 
         xml.end();
@@ -709,12 +805,124 @@ public class RequestXmlFactory {
 
         xml.start("Request");
         xml.start("Input");
-        addIfNotNull(xml,"Object",request.getInput().getObject());
+        addIfNotNull(xml, "Object", request.getInput().getObject());
+        addIfNotNull(xml, "Url", request.getInput().getUrl());
+        addIfNotNull(xml, "DataId", request.getInput().getDataId());
+        addUserInfo(xml, request.getInput().getUserInfo());
         xml.end();
         Conf conf = request.getConf();
         xml.start("Conf");
-        addIfNotNull(xml,"DetectType", conf.getDetectType());
-        addIfNotNull(xml,"Callback", conf.getCallback());
+        String detectType = conf.getDetectType();
+        addAuditingDetectType(xml, detectType);
+        addIfNotNull(xml, "Callback", conf.getCallback());
+        addIfNotNull(xml, "CallbackVersion", conf.getCallbackVersion());
+        addIfNotNull(xml, "BizType", conf.getBizType());
+        xml.end();
+
+        xml.end();
+        return xml.getBytes();
+    }
+
+    /**
+     * Converts the TextAuditingRequest to an XML fragment that can be sent to the CreateTextAuditingJob of CI
+     *
+     * @param request The container which provides options for restoring an object
+     * @return A byte array containing the data
+     * @throws CosClientException
+     */
+    public static byte[] convertToXmlByteArray(TextAuditingRequest request) {
+        XmlWriter xml = new XmlWriter();
+
+        xml.start("Request");
+        xml.start("Input");
+        addIfNotNull(xml, "Object", request.getInput().getObject());
+        addIfNotNull(xml, "Content", request.getInput().getContent());
+        addIfNotNull(xml, "Url", request.getInput().getUrl());
+        addIfNotNull(xml, "DataId", request.getInput().getDataId());
+        addUserInfo(xml, request.getInput().getUserInfo());
+        xml.end();
+        Conf conf = request.getConf();
+        xml.start("Conf");
+        String detectType = conf.getDetectType();
+        addAuditingDetectType(xml, detectType);
+        addIfNotNull(xml, "Callback", conf.getCallback());
+        addIfNotNull(xml, "BizType", conf.getBizType());
+        addIfNotNull(xml, "CallbackVersion", conf.getCallbackVersion());
+        addIfNotNull(xml, "CallbackType", conf.getCallbackType());
+        xml.end();
+
+        xml.end();
+        return xml.getBytes();
+    }
+
+    public static byte[] convertToXmlByteArray(DocumentAuditingRequest request) {
+        XmlWriter xml = new XmlWriter();
+
+        xml.start("Request");
+        xml.start("Input");
+        addIfNotNull(xml, "Url", request.getInput().getUrl());
+        addIfNotNull(xml, "Object", request.getInput().getObject());
+        addIfNotNull(xml, "Type", request.getInput().getType());
+        addIfNotNull(xml, "DataId", request.getInput().getDataId());
+        addUserInfo(xml, request.getInput().getUserInfo());
+        xml.end();
+        Conf conf = request.getConf();
+        xml.start("Conf");
+        String detectType = conf.getDetectType();
+        addAuditingDetectType(xml, detectType);
+        addIfNotNull(xml, "Callback", conf.getCallback());
+        addIfNotNull(xml, "BizType", conf.getBizType());
+        xml.end();
+
+        xml.end();
+        return xml.getBytes();
+    }
+
+    public static byte[] convertToXmlByteArray(WebpageAuditingRequest request) {
+        XmlWriter xml = new XmlWriter();
+
+        xml.start("Request");
+        xml.start("Input");
+        addIfNotNull(xml, "Url", request.getInput().getUrl());
+        xml.end();
+        Conf conf = request.getConf();
+        xml.start("Conf");
+        String detectType = conf.getDetectType();
+        addAuditingDetectType(xml, detectType);
+        addIfNotNull(xml, "Callback", conf.getCallback());
+        addIfNotNull(xml, "BizType", conf.getBizType());
+        addIfNotNull(xml, "ReturnHighlightHtml", conf.getReturnHighlightHtml());
+        xml.end();
+
+        xml.end();
+        return xml.getBytes();
+    }
+
+    public static byte[] convertToXmlByteArray(BatchImageAuditingRequest request) {
+        XmlWriter xml = new XmlWriter();
+
+        xml.start("Request");
+        List<BatchImageAuditingInputObject> inputList = request.getInputList();
+        for (BatchImageAuditingInputObject inputObject : inputList) {
+            xml.start("Input");
+            addIfNotNull(xml, "Url", inputObject.getUrl());
+            addIfNotNull(xml, "Object", inputObject.getObject());
+            addIfNotNull(xml, "DataId", inputObject.getDataId());
+            addIfNotNull(xml, "MaxFrames", inputObject.getMaxFrames());
+            addIfNotNull(xml, "Interval", inputObject.getInterval());
+            addIfNotNull(xml, "LargeImageDetect", inputObject.getLargeImageDetect());
+            addIfNotNull(xml, "Content", inputObject.getContent());
+            addUserInfo(xml, inputObject.getUserInfo());
+            xml.end();
+        }
+
+        Conf conf = request.getConf();
+        xml.start("Conf");
+        String detectType = conf.getDetectType();
+        addAuditingDetectType(xml, detectType);
+        addIfNotNull(xml, "BizType", conf.getBizType());
+        addIfNotNull(xml, "Async", conf.getAsync());
+        addIfNotNull(xml, "Callback", conf.getCallback());
         xml.end();
 
         xml.end();
@@ -735,9 +943,10 @@ public class RequestXmlFactory {
 
     private static void addVideo(XmlWriter xml, MediaTemplateRequest request) {
         MediaVideoObject video = request.getVideo();
-        addVideo(xml,video);
+        addVideo(xml, video);
     }
-    private static void addVideo(XmlWriter xml, MediaVideoObject video){
+
+    private static void addVideo(XmlWriter xml, MediaVideoObject video) {
         if (CheckObjectUtils.objIsValid(video)) {
             return;
         }
@@ -747,7 +956,7 @@ public class RequestXmlFactory {
         addIfNotNull(xml, "Height", video.getHeight());
         addIfNotNull(xml, "Fps", video.getFps());
         addIfNotNull(xml, "Bitrate", video.getBitrate());
-        addIfNotNull(xml, "BufSize", video.getBufSize());
+        addIfNotNull(xml, "Bufsize", video.getBufSize());
         addIfNotNull(xml, "Crf", video.getCrf());
         addIfNotNull(xml, "Crop", video.getCrop());
         addIfNotNull(xml, "Gop", video.getGop());
@@ -768,10 +977,57 @@ public class RequestXmlFactory {
         xml.end();
     }
 
+    private static void addVideo(XmlWriter xml, MediaTranscodeVideoObject video) {
+        if (CheckObjectUtils.objIsValid(video)) {
+            return;
+        }
+        xml.start("Video");
+        addIfNotNull(xml, "Codec", video.getCodec());
+        addIfNotNull(xml, "Width", video.getWidth());
+        addIfNotNull(xml, "Height", video.getHeight());
+        addIfNotNull(xml, "Fps", video.getFps());
+        addIfNotNull(xml, "Bitrate", video.getBitrate());
+        addIfNotNull(xml, "Bufsize", video.getBufSize());
+        addIfNotNull(xml, "Crf", video.getCrf());
+        addIfNotNull(xml, "Gop", video.getGop());
+        addIfNotNull(xml, "Maxrate", video.getMaxrate());
+        addIfNotNull(xml, "Preset", video.getPreset());
+        addIfNotNull(xml, "Profile", video.getProfile());
+        addIfNotNull(xml, "Remove", video.getRemove());
+        addIfNotNull(xml, "ScanMode", video.getScanMode());
+        addIfNotNull(xml, "Pixfmt", video.getPixfmt());
+        xml.end();
+    }
+
+    private static void addUserInfo(XmlWriter xml, UserInfo userInfo) {
+        if (CheckObjectUtils.objIsNotValid(userInfo)) {
+            xml.start("UserInfo");
+            addIfNotNull(xml, "TokenId", userInfo.getTokenId());
+            addIfNotNull(xml, "Nickname", userInfo.getNickname());
+            addIfNotNull(xml, "DeviceId", userInfo.getDeviceId());
+            addIfNotNull(xml, "AppId", userInfo.getAppId());
+            addIfNotNull(xml, "Room", userInfo.getRoom());
+            addIfNotNull(xml, "IP", userInfo.getIp());
+            addIfNotNull(xml, "Type", userInfo.getType());
+            addIfNotNull(xml, "ReceiveTokenId", userInfo.getReceiveTokenId());
+            addIfNotNull(xml, "Gender", userInfo.getGender());
+            addIfNotNull(xml, "Level", userInfo.getLevel());
+            addIfNotNull(xml, "Role", userInfo.getRole());
+            xml.end();
+        }
+    }
+
+    private static void addAuditingDetectType(XmlWriter xml, String detectType) {
+        if (!"all".equalsIgnoreCase(detectType)) {
+            addIfNotNull(xml, "DetectType", detectType);
+        }
+    }
+
+
     /**
      * 对象校验内部静态工具类
      */
-    private static class CheckObjectUtils {
+    public static class CheckObjectUtils {
 
         /**
          * 校验对象是否有效，判断对象中是否含有有效的字段。
@@ -787,7 +1043,8 @@ public class RequestXmlFactory {
                 //不检查 直接取值
                 field.setAccessible(true);
                 try {
-                    if (!isValid(field.get(obj))) {
+                    Object o = field.get(obj);
+                    if (!isValid(o)) {
                         //不为空
                         return true;
                     }

@@ -2,6 +2,7 @@ package com.qcloud.cos.model.ciModel.job;
 
 import com.qcloud.cos.model.ciModel.common.MediaOutputObject;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 import java.util.List;
 
 /**
@@ -18,11 +19,14 @@ public class DocOperationObject {
      */
     private DocProcessObject docProcessObject;
 
+    private DocWatermark docWatermarkObject;
+
     /**
      * 文档预览任务参数
      */
     private DocProcessResult docProcessResult;
 
+    private String UserData;
 
     public MediaOutputObject getOutput() {
         if (output == null) {
@@ -57,12 +61,32 @@ public class DocOperationObject {
         this.docProcessResult = docProcessResult;
     }
 
+    public String getUserData() {
+        return UserData;
+    }
+
+    public void setUserData(String userData) {
+        UserData = userData;
+    }
+
+    public DocWatermark getDocWatermarkObject() {
+        if (docWatermarkObject == null) {
+            docWatermarkObject = new DocWatermark();
+        }
+        return docWatermarkObject;
+    }
+    public void setDocWatermarkObject(DocWatermark docWatermarkObject) {
+        this.docWatermarkObject = docWatermarkObject;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("DocOperationObject{");
         sb.append("output=").append(output);
         sb.append(", docProcessObject=").append(docProcessObject);
+        sb.append(", docWatermarkObject=").append(docWatermarkObject);
         sb.append(", docProcessResult=").append(docProcessResult);
+        sb.append(", UserData='").append(UserData).append('\'');
         sb.append('}');
         return sb.toString();
     }

@@ -19,15 +19,27 @@
 
 package com.qcloud.cos.internal;
 
-import com.qcloud.cos.event.ProgressListener;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
 public class CIServiceRequest extends CosServiceRequest {
     /**
      * BucketName e.g：bucketName-1234567
      */
+    @XStreamOmitField
     private String bucketName;
-
+    @XStreamAlias("RequestId")
     private String requestId;
+    @XStreamOmitField
+    private String appId;
+
+    public String getAppId() {
+        return appId;
+    }
+
+    public void setAppId(String appId) {
+        this.appId = appId;
+    }
 
     public String getBucketName() {
         return bucketName;
@@ -36,6 +48,7 @@ public class CIServiceRequest extends CosServiceRequest {
     public void setBucketName(String bucketName) {
         this.bucketName = bucketName;
     }
+
     public String getRequestId() {
         return requestId;
     }

@@ -4,6 +4,272 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [5.6.259]
+- FileHashSync
+- AIObjectDetect
+- AIPortraitMatting
+- batchjobs
+
+## [5.6.257]
+- petDetect API
+- ImageSlim
+- virusDetect
+
+## [5.6.255]
+- update MediaJobObject
+- add AIGC API
+
+## [5.6.253]
+- update DocJob message
+
+## [5.6.246.3]
+- Tag Filter of post bucket inventory 
+
+## [5.6.246.2]
+- post bucket inventory
+
+## [5.6.246]
+- rename fault tolerant
+
+## [5.6.244.4]
+- 3xx exception retry
+
+## [5.6.244.3]
+- preflight for upload part 
+- x-cos-hash-crc32c
+- delete object version
+- throw 412 & 304 directly
+
+## [5.6.240.2]
+- update IdleConnectionMonitor
+
+## [5.6.240]
+- update tencentcloud-sdk-java-kms version
+- populate preflight request metadata
+
+## [5.6.238]
+- update request timeout
+- do not follow 302 by default
+
+## [5.6.234]
+- prefliht object before doing upload
+- add bucket encryption configuration API
+- add list bucket intelligent tiering Configuration API
+
+## [5.6.228]
+- ignoring certificate verification is supported
+
+## [5.6.220]
+- setting only the range start or only the range end is supported
+
+## [5.6.218]
+- add resumable upload
+
+## [5.6.208]
+- change default endpoint when retrying for the last time
+
+## [5.6.205]
+- encode source object name when renaming  OFS object
+
+## [5.6.195]
+- retry for some exceptions when copying object  
+
+## [5.6.168]
+- fetch resumable download
+
+## [5.6.151]
+- add CI Live Auditing API
+
+## [5.6.141]
+- add CI DetectFace API
+- update CI API
+
+## [5.6.140]
+- create MAZ bucket
+
+## [5.6.133]
+- update CI Media Process API
+
+## [5.6.119]
+- add CI Batch Job API
+- add File Process API
+
+## [5.6.109]
+- add Media Process ConcatTemplate API
+
+## [5.6.107]
+- update Auditing API
+
+## [5.6.105]
+- update PicProcess API 
+
+## [5.6.103]
+- update auditing bean
+- add video transcoding parameters
+
+## [5.6.101]
+- add CI ReportBadCase API
+- update CI DocumentPreview API
+- update QRCode API
+
+## [5.6.99]
+- update CI image processing API
+
+## [5.6.97]
+- update Auditing API
+
+## [5.6.95]
+- add media processing parameter
+
+## [5.6.93]
+- update ImageAuditing API
+
+## [5.6.91]
+- update media processing and repackaging tasks
+- add SmartCover API
+- add VideoMontage API
+
+## [5.6.89]
+- add media processing and repackaging tasks
+- update media transcoding api
+
+- ## [5.6.87]
+- add ImageSearch api
+
+## [5.6.83]
+- update ImageAuditing XmlResponsesSaxParser
+
+- ## [5.6.81]
+- update ImageAuditing api
+
+## [5.6.79]
+-  update DetectCar api
+-  update LabelImage api
+
+## [5.6.78]
+- add the isMetaAccBucket
+
+## [5.6.77]
+-  add DetectCar api
+
+## [5.6.75]
+-  fix etag verification exception
+
+- ## [5.6.74]
+- add media DigitalWatermark api
+- update ImageAuditing  api
+
+## [5.6.73]
+-  add the gitignore file
+
+## [5.6.72]
+-  update content auditing api
+
+## [5.6.71]
+- update TextAuditing interface
+
+## [5.6.70]
+- update ImageAuditing interface
+
+## [5.6.69]
+- refine the exception status code of complete multipart upload request
+
+## [5.6.68]
+- fix potential security vulnerabilities: update org.bouncycastle:bcprov-jdk15on 1.64->1.67
+
+## [5.6.67]
+- add one getPresignedUrl interface back
+- refine: set idle connection timeout to config
+
+## [5.6.66]
+- refine ioexception retry policy
+
+## [5.6.65]
+- add the new emr instance url
+
+## [5.6.64]
+- add fetch async task
+
+## [5.6.63]
+- update DocumentAuditing api 
+- add WebpageAuditing api
+
+## [5.6.62]
+- add the merge bucket interface, such like rename etc
+
+## [5.6.61]
+-  update ci region validate
+
+## [5.6.60]
+- refine get presigned url
+- add must auth headers
+- fix InstanceCredentialsUtils
+
+## [5.6.59]
+- add BatchImageAuditing api
+- update auditing params
+
+## [5.6.58]
+- make aes ctr encryption mode can set iv
+
+## [5.6.57]
+- update AudioAuditing api
+- add VideoAuditing new params
+
+## [5.6.56]
+- add encryption mode aes cbc
+
+## [5.6.55]
+- add batch image auditing api
+- add DocumentAuditing api
+- update CI Auditing api
+
+## [5.6.54]
+- default use https request
+- use strict sign
+- refine list buckets
+
+## [5.6.53] - 2021-8-31
+- add clientConfig new params
+- update CI request httpProtocol rules
+
+## [5.6.52] - 2021-8-18
+- fix get bucket no ruleId replication error
+- add bucekt referer configuration
+
+## [5.6.51] - 2021-8-3
+- update text auditing api to support more detectType
+- add auditing util
+
+## [5.6.50] - 2021-7-20
+- add text auditing new params
+- encryption client update: support encrypt & decrypt file with all cos sdk
+- support delete bucket domain
+
+## [5.6.49] - 2021-7-20
+- fix resumable download does not release file channel
+
+## [5.6.48] - 2021-7-20
+- fix resumable download does not release file handler
+
+## [5.6.47] - 2021-7-13
+
+###Added
+- update media transcode api
+- add media transcode demo
+- fix resumable download create directory error
+- add some demos
+
+## [5.6.46] - 2021-7-8
+
+###Added
+- add text auditing api and demo
+- add image label api v1&v2
+- update video auditing api
+- update httpclient to 4.5.13 for security reasons
+- add some demos
+
 ## [5.6.45] - 2021-6-10
 
 ###Added

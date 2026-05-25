@@ -42,6 +42,8 @@ public interface Headers {
     public static final String SERVER = "Server";
     public static final String USER_AGENT = "User-Agent";
     public static final String SDK_LOG_DEBUG = "x-cos-sdk-log-debug";
+    public static final String FILE_MODE_DIR = "x-cos-file-mode-dir";
+    public static final String CONNECTION = "Connection";
 
     /*
      * Cos HTTP Headers
@@ -66,6 +68,8 @@ public interface Headers {
      * part or object crc64
      */
     public static final String COS_HASH_CRC64_ECMA = "x-cos-hash-crc64ecma";
+
+    public static final String COS_HASH_CRC32_C = "x-cos-hash-crc32c";
 
     /**
      * Prefix for COS user metadata: x-cos-meta-
@@ -101,6 +105,13 @@ public interface Headers {
      * COS response header for TRACE ID
      */
     public static final String TRACE_ID = "x-cos-trace-id";
+
+    /**
+     * COS response header for merge bucket type
+     */
+    public static final String BUCKET_ARCH = "x-cos-bucket-arch";
+
+    public static final String BUCKET_AZ_TYPE = "x-cos-bucket-az-type";
 
     /**
      * COS request header indicating how to handle metadata when copying an object
@@ -260,7 +271,7 @@ public interface Headers {
     /**
      * Header for the original, unencrypted size of an encrypted object
      */
-    public static final String UNENCRYPTED_CONTENT_LENGTH = "x-cos-unencrypted-content-length";
+    public static final String UNENCRYPTED_CONTENT_LENGTH = "client-side-encryption-unencrypted-content-length";
 
     /**
      * Header for the optional original unencrypted Content MD5 of an encrypted object
@@ -308,4 +319,21 @@ public interface Headers {
     public static final String COS_BUCKET_REGION = "x-cos-bucket-region";
 
     public static final String PIC_OPERATIONS = "Pic-Operations";
+
+    // Client Side encryption header used in all COS SDK
+
+    public static final String ENCRYPTION_KEY = "client-side-encryption-key";
+    public static final String ENCRYPTION_START = "client-side-encryption-start";
+    public static final String ENCRYPTION_CEK_ALG = "client-side-encryption-cek-alg";
+    public static final String ENCRYPTION_WRAP_ALG = "client-side-encryption-wrap-alg";
+    public static final String ENCRYPTION_MATDESC = "client-side-encryption-matdesc";
+    public static final String ENCRYPTION_UNENCRYPTED_CONTENT_LENGTH =
+            "client-side-encryption-unencrypted-content-length";
+    public static final String ENCRYPTION_UNENCRYPTED_CONTENT_MD5 = "client-side-encryption-unencrypted-content-md5";
+    public static final String ENCRYPTION_DATA_SIZE = "client-side-encryption-data-size";
+    public static final String ENCRYPTION_PART_SIZE = "client-side-encryption-part-size";
+
+    public static final String SYMLINK_TARGET = "x-cos-symlink-target";
+
+    public static final String INODE_ID = "x-cos-inode-id";
 }

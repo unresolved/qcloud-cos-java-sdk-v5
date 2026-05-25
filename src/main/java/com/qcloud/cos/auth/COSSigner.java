@@ -30,20 +30,21 @@ import static com.qcloud.cos.auth.COSSignerConstants.Q_URL_PARAM_LIST;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.Set;
-import java.util.HashSet;
-
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.codec.digest.HmacUtils;
+import java.util.TreeMap;
 
 import com.qcloud.cos.Headers;
+import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.http.CosHttpRequest;
 import com.qcloud.cos.http.HttpMethodName;
 import com.qcloud.cos.internal.CosServiceRequest;
 import com.qcloud.cos.utils.UrlEncoderUtils;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.HmacUtils;
 
 public class COSSigner {
     private static Set<String> needSignedHeaderSet = new HashSet<>();
@@ -51,15 +52,25 @@ public class COSSigner {
     // Time offset between local and server
     private int localTimeDelta = 0;
     static {
-        needSignedHeaderSet.add("host");
-        needSignedHeaderSet.add("content-type");
-        needSignedHeaderSet.add("content-md5");
+        needSignedHeaderSet.add("cache-control");
         needSignedHeaderSet.add("content-disposition");
         needSignedHeaderSet.add("content-encoding");
         needSignedHeaderSet.add("content-length");
-        needSignedHeaderSet.add("transfer-encoding");
+        needSignedHeaderSet.add("content-md5");
+        needSignedHeaderSet.add("content-type");
+        needSignedHeaderSet.add("expect");
+        needSignedHeaderSet.add("expires");
+        needSignedHeaderSet.add("host");
+        needSignedHeaderSet.add("if-match");
+        needSignedHeaderSet.add("if-modified-since");
+        needSignedHeaderSet.add("if-none-match");
+        needSignedHeaderSet.add("if-unmodified-since");
+        needSignedHeaderSet.add("origin");
         needSignedHeaderSet.add("range");
+        needSignedHeaderSet.add("transfer-encoding");
+        needSignedHeaderSet.add(Headers.PIC_OPERATIONS.toLowerCase());
     }
+
     private boolean isAnonymous(COSCredentials cred) {
         return cred instanceof AnonymousCOSCredentials;
     }
@@ -71,18 +82,13 @@ public class COSSigner {
 
         String authoriationStr =
                 buildAuthorizationStr(request.getHttpMethod(), request.getResourcePath(),
-                        request.getHeaders(), request.getParameters(), cred, expiredTime);
+                        request.getHeaders(), request.getParameters(), cred, expiredTime, true);
 
         request.addHeader(Headers.COS_AUTHORIZATION, authoriationStr);
         if (cred instanceof COSSessionCredentials) {
             request.addHeader(Headers.SECURITY_TOKEN,
                     ((COSSessionCredentials) cred).getSessionToken());
         }
-    }
-    public String buildAuthorizationStr(HttpMethodName methodName, String resouce_path,
-            COSCredentials cred, Date expiredTime) {
-        return buildAuthorizationStr(methodName, resouce_path, new HashMap<String, String>(),
-                new HashMap<String, String>(), cred, expiredTime);
     }
 
     public String buildPostObjectSignature(String secretKey, String keyTime, String policy) {
@@ -92,16 +98,31 @@ public class COSSigner {
     }
 
     public String buildAuthorizationStr(HttpMethodName methodName, String resouce_path,
-                                        Map<String, String> headerMap, Map<String, String> paramMap, COSCredentials cred,
+                                        COSCredentials cred,
                                         Date expiredTime) {
         Date startTime = new Date();
-        return buildAuthorizationStr(methodName, resouce_path, headerMap, paramMap,
-                cred, startTime, expiredTime);
+        return buildAuthorizationStr(methodName, resouce_path, new HashMap<>(), new HashMap<>(), cred, startTime, expiredTime, true);
     }
 
     public String buildAuthorizationStr(HttpMethodName methodName, String resouce_path,
                                         Map<String, String> headerMap, Map<String, String> paramMap, COSCredentials cred,
-                                        Date startTime, Date expiredTime) {
+                                        Date expiredTime) {
+        Date startTime = new Date();
+        return buildAuthorizationStr(methodName, resouce_path, headerMap, paramMap,
+                cred, startTime, expiredTime,true);
+    }
+
+    public String buildAuthorizationStr(HttpMethodName methodName, String resouce_path,
+                                        Map<String, String> headerMap, Map<String, String> paramMap, COSCredentials cred,
+                                        Date expiredTime, Boolean signHost) {
+        Date startTime = new Date();
+        return buildAuthorizationStr(methodName, resouce_path, headerMap, paramMap,
+                cred, startTime, expiredTime, signHost);
+    }
+
+    public String buildAuthorizationStr(HttpMethodName methodName, String resouce_path,
+                                        Map<String, String> headerMap, Map<String, String> paramMap, COSCredentials cred,
+                                        Date startTime, Date expiredTime, Boolean signHost) {
         if (isAnonymous(cred)) {
             return null;
         }
@@ -110,23 +131,24 @@ public class COSSigner {
             resouce_path = resouce_path.split("\\?")[0];
         }
 
-        Map<String, String> signHeaders = buildSignHeaders(headerMap);
+        Map<String, String> signHeaders = buildSignHeaders(headerMap, signHost);
         // 签名中的参数和http 头部 都要进行字符串排序
-        TreeMap<String, String> sortedSignHeaders = new TreeMap<>();
-        TreeMap<String, String> sortedParams = new TreeMap<>();
+        //对请求中的参数和http头部进行处理：对key先urlencode再小写处理，对value进行urlencode处理;
+        //生成 key 到 value 的映射 Map,根据key按照字典序排序
+        TreeMap<String, String> encodedSortedSignHeaders = buildEncodeSortedMemberMap(signHeaders);
+        TreeMap<String, String> encodedSortedParams = buildEncodeSortedMemberMap(paramMap);
 
-        sortedSignHeaders.putAll(signHeaders);
-        sortedParams.putAll(paramMap);
+        //生成keylist
+        String qHeaderListStr = buildSignMemberStr(encodedSortedSignHeaders);
+        String qUrlParamListStr = buildSignMemberStr(encodedSortedParams);
 
-        String qHeaderListStr = buildSignMemberStr(sortedSignHeaders);
-        String qUrlParamListStr = buildSignMemberStr(sortedParams);
         String qKeyTimeStr, qSignTimeStr;
         qKeyTimeStr = qSignTimeStr = buildTimeStr(startTime, expiredTime);
         String signKey = HmacUtils.hmacSha1Hex(cred.getCOSSecretKey(), qKeyTimeStr);
         String formatMethod = methodName.toString().toLowerCase();
         String formatUri = resouce_path;
-        String formatParameters = formatMapToStr(sortedParams);
-        String formatHeaders = formatMapToStr(sortedSignHeaders);
+        String formatParameters = formatMapToStr(encodedSortedParams);
+        String formatHeaders = formatMapToStr(encodedSortedSignHeaders);
 
         String formatStr = new StringBuilder().append(formatMethod).append(LINE_SEPARATOR)
                 .append(formatUri).append(LINE_SEPARATOR).append(formatParameters)
@@ -148,19 +170,49 @@ public class COSSigner {
     }
 
     public boolean needSignedHeader(String header) {
-        return needSignedHeaderSet.contains(header) || header.startsWith("x-cos-");
+        return needSignedHeaderSet.contains(header) || header.startsWith("x-cos-") || header.startsWith("x-ci-");
     }
 
-    private Map<String, String> buildSignHeaders(Map<String, String> originHeaders) {
+    private Map<String, String> buildSignHeaders(Map<String, String> originHeaders, Boolean signHost) {
+        Boolean hasHost = false;
         Map<String, String> signHeaders = new HashMap<>();
         for (Entry<String, String> headerEntry : originHeaders.entrySet()) {
             String key = headerEntry.getKey().toLowerCase();
+
+            if (key.equals("host")) {
+                hasHost = true;
+            }
+
             if(needSignedHeader(key)) {
                 String value = headerEntry.getValue();
                 signHeaders.put(key, value);
             }
         }
+
+        if (!hasHost && signHost) {
+            String msg = String.format("buildAuthorization missing header: host. %s", originHeaders);
+            throw new CosClientException(msg);
+        }
+
         return signHeaders;
+    }
+
+    private TreeMap<String, String> buildEncodeSortedMemberMap(Map<String, String> signElements){
+        TreeMap<String, String> encodeSortedSignElements = new TreeMap<>();
+
+        for (Entry<String, String> header : signElements.entrySet()) {
+            if (header.getKey() == null) {
+                continue;
+            }
+            String encodeLowerKey = UrlEncoderUtils.encode(header.getKey().trim()).toLowerCase();
+            String value = "";
+            if (header.getValue()!=null){
+                value = header.getValue().trim();
+            }
+            String encodeValue = UrlEncoderUtils.encode(value);
+            encodeSortedSignElements.put(encodeLowerKey, encodeValue);
+        }
+        return encodeSortedSignElements;
     }
 
     private String buildSignMemberStr(Map<String, String> signHeaders) {
@@ -172,7 +224,7 @@ public class COSSigner {
             } else {
                 strBuilder.append(";");
             }
-            strBuilder.append(key.toLowerCase());
+            strBuilder.append(key);
         }
         return strBuilder.toString();
     }
@@ -183,18 +235,12 @@ public class COSSigner {
         for (Entry<String, String> entry : kVMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            String lowerKey = key.toLowerCase();
-            String encodeKey = UrlEncoderUtils.encode(lowerKey);
-            String encodedValue = "";
-            if (value != null) {
-                encodedValue = UrlEncoderUtils.encode(value);
-            }
             if (!seeOne) {
                 seeOne = true;
             } else {
                 strBuilder.append("&");
             }
-            strBuilder.append(encodeKey).append("=").append(encodedValue);
+            strBuilder.append(key).append("=").append(value);
         }
         return strBuilder.toString();
     }

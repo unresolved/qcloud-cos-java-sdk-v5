@@ -1,21 +1,51 @@
 package com.qcloud.cos.model.ciModel.persistence;
 
+import com.qcloud.cos.model.ciModel.job.AigcMetadata;
 import com.qcloud.cos.model.ciModel.recognition.QRcodeInfo;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 import java.util.List;
 
 public class CIObject {
+    @XStreamAlias("Key")
     private String key;
+
+    @XStreamAlias("Location")
     private String location;
+
+    @XStreamAlias("Format")
     private String format;
-    private Integer width;
-    private Integer height;
-    private Integer size;
-    private Integer quality;
+
+    @XStreamAlias("Width")
+    private int width;
+
+    @XStreamAlias("Height")
+    private int height;
+
+    @XStreamAlias("Size")
+    private int size;
+
+    @XStreamAlias("Quality")
+    private int quality;
+
+    @XStreamAlias("FrameCount")
+    private int frameCount;
+
+    @XStreamAlias("ETag")
     private String etag;
+
+    @XStreamAlias("WatermarkStatus")
     private Integer watermarkStatus;
+    @XStreamAlias("CodeStatus")
     private Integer codeStatus;
+    @XStreamImplicit(itemFieldName = "QRcodeInfo")
     private List<QRcodeInfo> QRcodeInfoList;
+
+    @XStreamAlias("AIGCMetadata")
+    private AigcMetadata aigcMetadata;
+
+
     public String getKey() {
         return key;
     }
@@ -102,5 +132,41 @@ public class CIObject {
 
     public void setWatermarkStatus(Integer watermarkStatus) {
         this.watermarkStatus = watermarkStatus;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public void setQuality(int quality) {
+        this.quality = quality;
+    }
+
+    public int getFrameCount() {
+        return frameCount;
+    }
+
+    public void setFrameCount(int frameCount) {
+        this.frameCount = frameCount;
+    }
+
+
+    public AigcMetadata getAigcMetadata() {
+        if (aigcMetadata == null) {
+            aigcMetadata = new AigcMetadata();
+        }
+        return aigcMetadata;
+    }
+
+    public void setAigcMetadata(AigcMetadata aigcMetadata) {
+        this.aigcMetadata = aigcMetadata;
     }
 }

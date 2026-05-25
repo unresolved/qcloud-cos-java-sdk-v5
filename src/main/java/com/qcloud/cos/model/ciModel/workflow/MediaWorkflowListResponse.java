@@ -1,7 +1,8 @@
 package com.qcloud.cos.model.ciModel.workflow;
 
-import com.qcloud.cos.internal.CIServiceRequest;
 import com.qcloud.cos.model.CiServiceResult;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -15,24 +16,44 @@ public class MediaWorkflowListResponse extends CiServiceResult implements Serial
     /**
      * 请求id
      */
+    @XStreamAlias("RequestId")
     private String requestId;
     /**
      * 工作流总数
      */
+    @XStreamAlias("TotalCount")
     private String totalCount;
     /**
      * 当前页数，同请求中的 pageNumber
      */
+    @XStreamAlias("PageNumber")
     private String pageNumber;
     /**
      * 每页个数，同请求中的 pageSize
      */
+    @XStreamAlias("PageSize")
     private String pageSize;
+    /**
+     * 实例 ID
+     */
+    @XStreamAlias("InstanceId")
+    private String instanceId;
     /**
      * 工作流数组
      */
+    @XStreamImplicit(itemFieldName = "MediaWorkflowList")
     private List<MediaWorkflowObject> mediaWorkflowList;
 
+    @XStreamAlias("AttachParam")
+    private AttachParam attachParam;
+
+    public AttachParam getAttachParam() {
+        return attachParam;
+    }
+
+    public void setAttachParam(AttachParam attachParam) {
+        this.attachParam = attachParam;
+    }
 
     public String getTotalCount() {
         return totalCount;
@@ -58,6 +79,14 @@ public class MediaWorkflowListResponse extends CiServiceResult implements Serial
         this.pageSize = pageSize;
     }
 
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
+    }
+
     public List<MediaWorkflowObject> getMediaWorkflowList() {
         if (mediaWorkflowList == null) {
             mediaWorkflowList = new ArrayList<>();
@@ -79,12 +108,14 @@ public class MediaWorkflowListResponse extends CiServiceResult implements Serial
 
     @Override
     public String toString() {
-        return "MediaWorkflowListResponse{" +
-                "requestId='" + requestId + '\'' +
-                ", totalCount='" + totalCount + '\'' +
-                ", pageNumber='" + pageNumber + '\'' +
-                ", pageSize='" + pageSize + '\'' +
-                ", mediaWorkflowList=" + mediaWorkflowList +
-                '}';
+        final StringBuffer sb = new StringBuffer("MediaWorkflowListResponse{");
+        sb.append("requestId='").append(requestId).append('\'');
+        sb.append(", totalCount='").append(totalCount).append('\'');
+        sb.append(", pageNumber='").append(pageNumber).append('\'');
+        sb.append(", pageSize='").append(pageSize).append('\'');
+        sb.append(", instanceId='").append(instanceId).append('\'');
+        sb.append(", mediaWorkflowList=").append(mediaWorkflowList);
+        sb.append('}');
+        return sb.toString();
     }
 }

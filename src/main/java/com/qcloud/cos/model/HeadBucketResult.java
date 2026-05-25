@@ -11,7 +11,7 @@
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
- 
+
  * According to cos feature, we modify some class，comment, field name, etc.
  */
 
@@ -26,6 +26,8 @@ import java.io.Serializable;
 public class HeadBucketResult implements Serializable {
 
     private String bucketRegion;
+    private boolean isMergeBucket;
+    private boolean isMazBucket;
 
     /**
      * Returns the region where the bucket is located.
@@ -41,6 +43,26 @@ public class HeadBucketResult implements Serializable {
     public HeadBucketResult withBucketRegion(String bucketRegion) {
         setBucketRegion(bucketRegion);
         return this;
+    }
+
+    public boolean isMergeBucket() {
+        return this.isMergeBucket;
+    }
+
+    public boolean isMetaAccBucket() {
+        return this.isMergeBucket;
+    }
+
+    public void setMergeBucket(boolean isMergeBucket) {
+        this.isMergeBucket = isMergeBucket;
+    }
+
+    public boolean isMazBucket() {
+        return isMazBucket;
+    }
+
+    public void setMazBucket(boolean mazBucket) {
+        isMazBucket = mazBucket;
     }
 }
 

@@ -11,7 +11,7 @@
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
- 
+
  * According to cos feature, we modify some class，comment, field name, etc.
  */
 
@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Executors;
 
 import com.qcloud.cos.COS;
 import com.qcloud.cos.COSClient;
@@ -71,6 +72,9 @@ import com.qcloud.cos.model.MultipartUploadListing;
 import com.qcloud.cos.model.ObjectListing;
 import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.model.PutObjectRequest;
+import com.qcloud.cos.model.ciModel.auditing.ImageAuditingRequest;
+import com.qcloud.cos.model.ciModel.auditing.ImageAuditingResponse;
+import com.qcloud.cos.model.ciModel.image.ImageLabelRequest;
 import com.qcloud.cos.transfer.Transfer.TransferState;
 import com.qcloud.cos.utils.VersionInfoUtils;
 
@@ -125,7 +129,7 @@ import org.slf4j.LoggerFactory;
  * Transfers can be paused and resumed at a later time. It can also survive JVM crash, provided the
  * information that is required to resume the transfer is given as input to the resume operation.
  * For more information on pause and resume,
- * 
+ *
  * @see Upload#pause()
  * @see Download#pause()
  * @see TransferManager#resumeUpload(PersistableUpload)
@@ -581,17 +585,39 @@ public class TransferManager {
         }
 
         PersistableResumeDownload downloadRecord = null;
+        FileInputStream is = null;
         try {
+
+            // attempt to create the parent if it doesn't exist
+            File parentDirectory = resumableTaskFile.getParentFile();
+            if ( parentDirectory != null && !parentDirectory.exists() ) {
+                if (!(parentDirectory.mkdirs())) {
+                    throw new CosClientException(
+                            "Unable to create directory in the path"
+                                    + parentDirectory.getAbsolutePath());
+                }
+            }
+
             if (!resumableTaskFile.exists()) {
                 resumableTaskFile.createNewFile();
             }
 
-            downloadRecord = PersistableResumeDownload.deserializeFrom(new FileInputStream(resumableTaskFile));
+            is = new FileInputStream(resumableTaskFile);
+
+            downloadRecord = PersistableResumeDownload.deserializeFrom(is);
             log.info("deserialize download record from " + resumableTaskFile.getAbsolutePath() + "record: " + downloadRecord.serialize());
         } catch (IOException e) {
             throw new CosClientException("can not create file" + resumableTaskFile.getAbsolutePath() + e);
         } catch (IllegalArgumentException e) {
             log.warn("resumedownload task file cannot deserialize"+e);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    throw new CosClientException("can not close input stream " + resumableTaskFile.getAbsolutePath() + e);
+                }
+            }
         }
 
         if (downloadRecord == null || downloadRecord.getLastModified() != cosLastModified ||
@@ -651,11 +677,13 @@ public class TransferManager {
         DownloadImpl download = new DownloadImpl(description, transferProgress, listenerChain,
                 null, stateListener, getObjectRequest, destFile);
 
-        ResumableDownloadSubmitter submitter = new ResumableDownloadSubmitter(cos, threadPool, getObjectRequest,
+        ExecutorService partDownloadThreadPool = Executors.newFixedThreadPool(getObjectRequest.getDownloadPartsThreads());
+
+        ResumableDownloadSubmitter submitter = new ResumableDownloadSubmitter(cos, partDownloadThreadPool, getObjectRequest,
                 download, destFile, destRandomAccessFile, destFileChannel, downloadRecord, partSize, multiThreadThreshold, transferProgress, listenerChain);
 
         ResumableDownloadMonitor monitor = ResumableDownloadMonitor.create(listenerChain, submitter, download, threadPool,
-                downloadRecord, destFile);
+                downloadRecord, destFile, destFileChannel);
 
         download.setMonitor(monitor);
         return download;
@@ -693,7 +721,7 @@ public class TransferManager {
         long lastByte;
 
         long[] range = getObjectRequest.getRange();
-        if (range != null && range.length == 2) {
+        if (range != null && range.length == 2 && range[0] != -1 && range[1] != -1) {
             startingByte = range[0];
             lastByte = range[1];
         } else {
@@ -706,6 +734,13 @@ public class TransferManager {
             final ObjectMetadata objectMetadata = cos.getObjectMetadata(getObjectMetadataRequest);
 
             lastByte = objectMetadata.getContentLength() - 1;
+            if (range != null && range.length == 2) {
+                if (range[0] == -1) {
+                    startingByte = lastByte - range[1] + 1;
+                } else {
+                    startingByte = range[0];
+                }
+            }
         }
         final long origStartingByte = startingByte;
         // We still pass the unfiltered listener chain into DownloadImpl
@@ -1086,6 +1121,41 @@ public class TransferManager {
         } while (uploadListing.isTruncated());
     }
 
+    public MultipleImageAuditingImpl batchPostImageAuditing(List<ImageAuditingRequest> requestList) {
+        String description = "Send image auditing jobs in bulk";
+        TransferProgress transferProgress = new TransferProgress();
+        List<ImageAuditingImpl> imageAuditingList = new ArrayList<>();
+        final MultipleImageAuditingImpl multipleImageAuditing =
+                new MultipleImageAuditingImpl(description, transferProgress, imageAuditingList);
+        multipleImageAuditing
+                .setMonitor(new MultipleFileTransferMonitor(multipleImageAuditing, imageAuditingList));
+        final CountDownLatch latch = new CountDownLatch(1);
+        MultipleFileTransferStateChangeListener transferListener =
+                new MultipleFileTransferStateChangeListener(latch, multipleImageAuditing);
+
+        for (ImageAuditingRequest imageAuditingRequest : requestList) {
+            imageAuditingList.add(doImageAuditing(imageAuditingRequest,transferListener));
+        }
+        latch.countDown();
+        return multipleImageAuditing;
+    }
+
+    private ImageAuditingImpl doImageAuditing(ImageAuditingRequest request, MultipleFileTransferStateChangeListener transferListener) {
+        appendImageAuditingUserAgent(request);
+        String description = "send image auditing job ";
+        TransferProgress transferProgress = new TransferProgress();
+        COSProgressListenerChain listenerChain = new COSProgressListenerChain(
+                new TransferProgressUpdatingListener(transferProgress),
+                request.getGeneralProgressListener());
+        ImageAuditingImpl imageAuditing = new ImageAuditingImpl(description,transferProgress,listenerChain,transferListener,request);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Future<?> future = threadPool.submit(new ImageAuditingCallable(cos, latch, request,
+                imageAuditing));
+        imageAuditing.setMonitor(new ImageAuditingMonitor(imageAuditing, future));
+        latch.countDown();
+        return imageAuditing;
+    }
+
     /**
      * Forcefully shuts down this TransferManager instance - currently executing transfers will not
      * be allowed to finish. It also by default shuts down the underlying Qcloud COS client.
@@ -1145,10 +1215,17 @@ public class TransferManager {
         return request;
     }
 
+    public static <X extends CosServiceRequest> X appendImageAuditingUserAgent(X request) {
+        request.getRequestClientOptions().appendUserAgent(USER_AGENT_MULTIPART);
+        return request;
+    }
+
     private static final String USER_AGENT =
             TransferManager.class.getName() + "/" + VersionInfoUtils.getVersion();
     private static final String USER_AGENT_MULTIPART =
             TransferManager.class.getName() + "_multipart/" + VersionInfoUtils.getVersion();
+    private static final String USER_AGENT_IMAGE_AUDITING_JOB =
+            TransferManager.class.getName() + "_ImageAuditing/" + VersionInfoUtils.getVersion();
 
 
     private static final String DEFAULT_DELIMITER = "/";
@@ -1386,7 +1463,7 @@ public class TransferManager {
      * source & destination buckets are in different regions, use the
      * {@link #copy(CopyObjectRequest, COS, TransferStateChangeListener)} method.
      * </p>
-     * 
+     *
      * @param sourceBucketName The name of the bucket from where the object is to be copied.
      * @param sourceKey The name of the COS object.
      * @param destinationBucketName The name of the bucket to where the COS object has to be copied.
@@ -1507,13 +1584,13 @@ public class TransferManager {
      * If resources are available, the copy request will begin immediately. Otherwise, the copy is
      * scheduled and started as soon as resources become available.
      * </p>
-     * 
+     *
      * <p>
      * <b>Note:</b> If the {@link TransferManager} is created with a regional COS client and the
      * source & destination buckets are in different regions, use the
      * {@link #copy(CopyObjectRequest, COS, TransferStateChangeListener)} method.
      * </p>
-     * 
+     *
      * @param copyObjectRequest The request containing all the parameters for the copy.
      * @param srcCOS An COS client constructed for the region in which the source object's bucket is
      *        located.

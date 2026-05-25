@@ -19,7 +19,6 @@
 package com.qcloud.cos.model;
 
 import java.util.List;
-import java.util.Map;
 
 import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.internal.XmlWriter;
@@ -29,23 +28,26 @@ import com.qcloud.cos.model.BucketLifecycleConfiguration.Transition;
 import com.qcloud.cos.model.CORSRule.AllowedMethods;
 import com.qcloud.cos.model.Tag.LifecycleTagPredicate;
 import com.qcloud.cos.model.Tag.Tag;
+import com.qcloud.cos.model.bucketcertificate.BucketDomainCertificateInfo;
+import com.qcloud.cos.model.bucketcertificate.BucketDomainCertificateParameters;
+import com.qcloud.cos.model.bucketcertificate.BucketPutDomainCertificate;
 import com.qcloud.cos.model.inventory.InventoryConfiguration;
-import com.qcloud.cos.model.inventory.InventoryDestination;
 import com.qcloud.cos.model.inventory.InventoryCosBucketDestination;
+import com.qcloud.cos.model.inventory.InventoryDestination;
 import com.qcloud.cos.model.inventory.InventoryEncryption;
-import com.qcloud.cos.model.inventory.ServerSideEncryptionCOS;
-import com.qcloud.cos.model.inventory.InventoryPrefixPredicate;
 import com.qcloud.cos.model.inventory.InventoryFilter;
-import com.qcloud.cos.model.inventory.InventorySchedule;
 import com.qcloud.cos.model.inventory.InventoryFilterPredicate;
-
+import com.qcloud.cos.model.inventory.InventoryPrefixPredicate;
+import com.qcloud.cos.model.inventory.InventorySchedule;
+import com.qcloud.cos.model.inventory.ServerSideEncryptionCOS;
+import com.qcloud.cos.model.inventory.InventoryAndPredicate;
 import com.qcloud.cos.model.lifecycle.LifecycleAndOperator;
 import com.qcloud.cos.model.lifecycle.LifecycleFilter;
 import com.qcloud.cos.model.lifecycle.LifecycleFilterPredicate;
 import com.qcloud.cos.model.lifecycle.LifecyclePredicateVisitor;
 import com.qcloud.cos.model.lifecycle.LifecyclePrefixPredicate;
-import com.qcloud.cos.utils.DateUtils;
 import com.qcloud.cos.utils.CollectionUtils;
+import com.qcloud.cos.utils.DateUtils;
 
 
 /**
@@ -129,12 +131,14 @@ public class BucketConfigurationXmlFactory {
         return xml.getBytes();
     }
 
-    public byte[] convertToXmlByteArray(InventoryConfiguration config) throws CosClientException {
+    public byte[] convertToXmlByteArray(InventoryConfiguration config, boolean isOneTimeInventory) throws CosClientException {
         XmlWriter xml = new XmlWriter();
         xml.start("InventoryConfiguration");
 
         xml.start("Id").value(config.getId()).end();
-        xml.start("IsEnabled").value(String.valueOf(config.isEnabled())).end();
+        if (!isOneTimeInventory) {
+            xml.start("IsEnabled").value(String.valueOf(config.isEnabled())).end();
+        }
         xml.start("IncludedObjectVersions").value(config.getIncludedObjectVersions()).end();
 
         writeInventoryDestination(xml, config.getDestination());
@@ -157,6 +161,28 @@ public class BucketConfigurationXmlFactory {
         }
 
         xml.end();
+
+        return xml.getBytes();
+    }
+
+    public byte[] convertToXmlByteArray(BucketEncryptionConfiguration config) throws CosClientException {
+        XmlWriter xml = new XmlWriter();
+        xml.start("ServerSideEncryptionConfiguration");
+        xml.start("Rule");
+        if (!config.getBucketEnabled().isEmpty()) {
+            xml.start("BucketKeyEnabled").value(config.getBucketEnabled()).end();
+        }
+        xml.start("ApplyServerSideEncryptionByDefault");
+        xml.start("SSEAlgorithm").value(config.getSseAlgorithm()).end();
+        if (!config.getKmsMasterKeyID().isEmpty()) {
+            xml.start("KMSMasterKeyID").value(config.getKmsMasterKeyID()).end();
+        }
+        if (!config.getKMSAlgorithm().isEmpty()) {
+            xml.start("KMSAlgorithm").value(config.getKMSAlgorithm()).end();
+        }
+        xml.end(); // ApplyServerSideEncryptionByDefault
+        xml.end(); // Rule
+        xml.end(); // ServerSideEncryptionConfiguration
 
         return xml.getBytes();
     }
@@ -208,6 +234,18 @@ public class BucketConfigurationXmlFactory {
 
         if (predicate instanceof InventoryPrefixPredicate) {
             writePrefix(xml, ((InventoryPrefixPredicate) predicate).getPrefix());
+        }
+
+        if (predicate instanceof InventoryAndPredicate) {
+            xml.start("And");
+            writePrefix(xml, ((InventoryAndPredicate) predicate).getPrefix());
+            List<Tag> tags = ((InventoryAndPredicate) predicate).getTags();
+            if (tags != null && !tags.isEmpty()) {
+                for (Tag tag : tags) {
+                    writeTag(xml, tag);
+                }
+            }
+            xml.end();
         }
     }
 
@@ -559,13 +597,12 @@ public class BucketConfigurationXmlFactory {
     public byte[] convertToXmlByteArray(BucketReplicationConfiguration replicationConfiguration) {
         XmlWriter xml = new XmlWriter();
         xml.start("ReplicationConfiguration");
-        Map<String, ReplicationRule> rules = replicationConfiguration.getRules();
+        List<ReplicationRule> rules = replicationConfiguration.getRules();
 
         final String role = replicationConfiguration.getRoleName();
         xml.start("Role").value(role).end();
-        for (Map.Entry<String, ReplicationRule> entry : rules.entrySet()) {
-            final String ruleId = entry.getKey();
-            final ReplicationRule rule = entry.getValue();
+        for (ReplicationRule rule : rules) {
+            final String ruleId = rule.getID();
 
             xml.start("Rule");
             xml.start("ID").value(ruleId).end();
@@ -592,6 +629,31 @@ public class BucketConfigurationXmlFactory {
         for (DomainRule rule : domainConfiguration.getDomainRules()) {
             writeRule(xml, rule);
         }
+        xml.end();
+        return xml.getBytes();
+    }
+
+    public byte[] convertToXmlByteArray(BucketRefererConfiguration refererConfiguration) {
+        XmlWriter xml = new XmlWriter();
+
+        xml.start("RefererConfiguration");
+
+        xml.start("Status").value(refererConfiguration.getStatus()).end();
+        xml.start("RefererType").value(refererConfiguration.getRefererType()).end();
+
+        xml.start("DomainList");
+        for (String domain : refererConfiguration.getDomainList()) {
+            xml.start("Domain").value(domain).end();
+        }
+        xml.end();
+
+        String emptyReferConfiguration = refererConfiguration.getEmptyReferConfiguration();
+        if (emptyReferConfiguration != null &&
+                (emptyReferConfiguration == BucketRefererConfiguration.DENY || emptyReferConfiguration == BucketRefererConfiguration.ALLOW)) {
+
+            xml.start("EmptyReferConfiguration").value(emptyReferConfiguration).end();
+        }
+
         xml.end();
         return xml.getBytes();
     }
@@ -646,4 +708,27 @@ public class BucketConfigurationXmlFactory {
         return xml.getBytes();
     }
 
+    public byte[] convertToXmlByteArray(BucketPutDomainCertificate domainCertificate)
+            throws CosClientException{
+        XmlWriter xml = new XmlWriter();
+        xml.start(BucketDomainCertificateParameters.Element_Domain_Certificate);
+        BucketDomainCertificateInfo certificateInfo = domainCertificate.getBucketDomainCertificateInfo();
+        xml.start(BucketDomainCertificateParameters.Element_CertificateInfo);
+        xml.start(BucketDomainCertificateParameters.Element_CertType).value(certificateInfo.getCertType()).end();
+
+        xml.start(BucketDomainCertificateParameters.Element_CustomCert);
+        xml.start(BucketDomainCertificateParameters.Element_Cert).value(certificateInfo.getCert()).end();
+        xml.start(BucketDomainCertificateParameters.Element_PrivateKey).value(certificateInfo.getPrivateKey()).end();
+        xml.end();
+        xml.end();
+
+        xml.start(BucketDomainCertificateParameters.Element_DomainList);
+        for (String domain : domainCertificate.getDomainList()) {
+            xml.start(BucketDomainCertificateParameters.Element_DomainName).value(domain).end();
+        }
+        xml.end();
+        xml.end();
+
+        return xml.getBytes();
+    }
 }

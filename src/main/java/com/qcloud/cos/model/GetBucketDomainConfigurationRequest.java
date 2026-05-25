@@ -25,7 +25,7 @@ import com.qcloud.cos.internal.CosServiceRequest;
  */
 public class GetBucketDomainConfigurationRequest extends CosServiceRequest implements Serializable {
 
-    /** The name of the bucket whose website configuration is being retrieved. */
+    /** The name of the bucket whose domain configuration is being retrieved. */
     private String bucketName;
 
 

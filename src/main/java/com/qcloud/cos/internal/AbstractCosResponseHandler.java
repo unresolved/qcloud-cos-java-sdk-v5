@@ -11,7 +11,7 @@
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
- 
+
  * According to cos feature, we modify some class，comment, field name, etc.
  */
 
@@ -113,7 +113,7 @@ public abstract class AbstractCosResponseHandler<T>
             } else if (key.equalsIgnoreCase(Headers.DELETE_MARKER)) {
                 metadata.setDeleteMarker(Boolean.parseBoolean(header.getValue()));
             } else if (key.equalsIgnoreCase(Headers.ETAG)) {
-                metadata.setHeader(key, StringUtils.removeQuotes(header.getValue()));
+                metadata.setETag(StringUtils.removeQuotes(header.getValue()));
             } else if (key.equalsIgnoreCase(Headers.EXPIRES)) {
                 try {
                     metadata.setHttpExpiresDate(DateUtils.parseRFC822Date(header.getValue()));
@@ -124,6 +124,8 @@ public abstract class AbstractCosResponseHandler<T>
                 new ObjectExpirationHeaderHandler<ObjectMetadata>().handle(metadata, response);
             } else if (key.equalsIgnoreCase(Headers.RESTORE)) {
                 new ObjectRestoreHeaderHandler<ObjectRestoreResult>().handle(metadata, response);
+            } else if (key.equalsIgnoreCase(Headers.FILE_MODE_DIR)) { // used for merge bucket
+                metadata.setFileModeDir(true);
             } else {
                 metadata.setHeader(key, header.getValue());
             }

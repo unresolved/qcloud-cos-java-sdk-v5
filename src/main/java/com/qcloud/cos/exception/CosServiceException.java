@@ -108,6 +108,8 @@ public class CosServiceException extends CosClientException {
      */
     private final String errorResponseXml;
 
+    private boolean needPreflight = false;
+
     /**
      * Constructs a new CosServiceException with the specified message.
      *
@@ -290,5 +292,17 @@ public class CosServiceException extends CosClientException {
         this.rawResponseContent = rawResponseContent;
     }
 
+    public String toString() {
+        return super.toString() + ". statusCode:" + getStatusCode() + ",requestId:" + getRequestId()
+                + ",errType:" + getErrorType();
+    }
+
+    public boolean isNeedPreflight() {
+        return needPreflight;
+    }
+
+    public void setNeedPreflight(boolean needPreflight) {
+        this.needPreflight = needPreflight;
+    }
 }
 
